@@ -1,0 +1,103 @@
+{
+  "name": "Canary",
+  "navigation": [
+    {
+      "group": "Introdução",
+      "pages": [
+        "introduction"
+      ]
+    },
+    {
+      "group": "Compilando",
+      "pages": [
+        "compiling/windows",
+        "compiling/linux",
+        "compiling/macos"
+      ]
+    },
+    {
+      "group": "OTServBR-Global",
+      "pages": [
+        {
+          "group": "Monstros",
+          "pages": [
+            "otservbr-global/monster/index"
+          ]
+        },
+        {
+          "group": "NPCs",
+          "pages": [
+            "otservbr-global/npc/index"
+          ]
+        },
+        {
+          "group": "Invasões (Raids)",
+          "pages": [
+            "otservbr-global/raids/index"
+          ]
+        },
+        {
+          "group": "Mundo (World)",
+          "pages": [
+            "otservbr-global/world/index"
+          ]
+        },
+        {
+          "group": "Scripts",
+          "pages": [
+            "otservbr-global/scripts/index"
+          ]
+        },
+        {
+          "group": "Bibliotecas (Lib)",
+          "pages": [
+            "otservbr-global/lib/index"
+          ]
+        },
+        {
+          "group": "Inicialização (Startup)",
+          "pages": [
+            "otservbr-global/startup/index",
+            "otservbr-global/startup/README",
+            "otservbr-global/startup/startup",
+            {
+              "group": "others",
+              "pages": [
+                "otservbr-global/startup/others/functions",
+                "otservbr-global/startup/others/load"
+              ]
+            },
+            {
+              "group": "tables",
+              "pages": [
+                "otservbr-global/startup/tables/chest",
+                "otservbr-global/startup/tables/corpse",
+                "otservbr-global/startup/tables/create_item",
+                "otservbr-global/startup/tables/door_key",
+                "otservbr-global/startup/tables/door_level",
+                "otservbr-global/startup/tables/door_quest",
+                "otservbr-global/startup/tables/item_daily_reward",
+                "otservbr-global/startup/tables/item_unmovable",
+                "otservbr-global/startup/tables/item",
+                "otservbr-global/startup/tables/lever",
+                "otservbr-global/startup/tables/load",
+                "otservbr-global/startup/tables/storage_keys_update",
+                "otservbr-global/startup/tables/teleport_item",
+                "otservbr-global/startup/tables/teleport",
+                "otservbr-global/startup/tables/tile_pick",
+                "otservbr-global/startup/tables/tile",
+                "otservbr-global/startup/tables/writeable"
+              ]
+            }
+          ]
+        },
+        {
+          "group": "Migrações (Migrations)",
+          "pages": [
+            "otservbr-global/migrations/index"
+          ]
+        }
+      ]
+    }
+  ]
+}
