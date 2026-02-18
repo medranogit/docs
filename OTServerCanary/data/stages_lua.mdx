@@ -4,105 +4,92 @@ description: "Documentação técnica de stages.lua"
 icon: "file-code"
 ---
 
-<img
-  style={{ borderRadius:"0.5rem" }}
-  src="/images/Capturadetela2026-02-18162032.png"
-  className="hidden dark:block hidden dark:block"
-/>
-<img
-  style={{ borderRadius:"0.5rem" }}
-  src="/images/hero-dark.png"
-  className="hidden dark:block dark:hidden"
-/>
-
-<img
-  style={{ borderRadius:"0.5rem" }}
-  src="/images/Capturadetela2026-02-18162032.png"
-  className="dark:hidden"
-/>
-
 ## 🛠️ Informações do Arquivo
 
-Este arquivo define tabelas de configuração de "stages" (faixas de nível) usadas para determinar multiplicadores de experiência, habilidades e magic level no servidor. É um componente de configuração crítico que influencia diretamente a progressão e o balanceamento dos personagens.
+Este arquivo define as tabelas de configuração para os "stages" (estágios) de experiência, skills e magic level. Ele é fundamental para o balanceamento da progressão dos jogadores no servidor, determinando quão rápido eles avançam em diferentes faixas de nível.
 
 <ResponseField name="Caminho Original" type="path">
   `server/data/stages.lua`
 </ResponseField>
 
 <Tip>
-  Este arquivo foi mapeado automaticamente pelo **Mintlify Architect**. Certifique-se de validar as dependências de sistema antes de editar este script.
+  As alterações neste arquivo afetam diretamente a economia e a longevidade do servidor. Ajustes devem ser feitos com cautela para evitar desbalanceamento.
 </Tip>
 
 ## 📄 Visão Geral do Código
 
 ### Resumo Executivo
-O `stages.lua` atua como o controlador central da curva de aprendizado do jogo, definindo multiplicadores dinâmicos baseados no nível do personagem. Sua importância reside no balanceamento da economia de tempo do jogador, permitindo uma progressão rápida no início (early game) e mais lenta/estratégica no final (end game).
 
-### Análise de Estruturas de Dados
+O `stages.lua` contém tabelas globais que o motor do servidor utiliza para calcular os multiplicadores de ganho de experiência e habilidades. Ele permite criar uma curva de dificuldade progressiva, onde o ganho diminui à medida que o jogador fica mais forte.
 
-Como este arquivo é puramente configuracional e não contém funções executáveis, a análise foca nas três tabelas principais que o motor do jogo consome.
+### Fluxo de Execução
 
-#### 1. `experienceStages`
-Define a taxa de ganho de experiência (XP) ao matar monstros.
+Este arquivo é carregado durante a inicialização pelo `core.lua`. As tabelas definidas aqui tornam-se globais e são consultadas internamente pelo motor C++ (Source) toda vez que um jogador ganha experiência ou treina uma habilidade.
 
-*   **Estrutura:** Lista de tabelas contendo `{ minlevel, maxlevel, multiplier }`.
-*   **Parâmetros:**
-    *   `minlevel` (Number): O nível inicial para ativar este estágio.
-    *   `maxlevel` (Number | Opcional): O nível final deste estágio. Se omitido, considera-se infinito.
-    *   `multiplier` (Number): O fator pelo qual a experiência base do monstro é multiplicada (ex: 20x).
-*   **Lógica Interna:** O servidor verifica o nível atual do jogador. Se estiver dentro de um intervalo `minlevel` e `maxlevel`, aplica o `multiplier`.
+```mermaid
+graph LR
+    A[core.lua] -->|dofile| B[stages.lua]
+    B -.->|Define| C[experienceStages]
+    B -.->|Define| D[skillsStages]
+    B -.->|Define| E[magicLevelStages]
+    F[Engine C++] -.->|Lê| C
+    F -.->|Lê| D
+    F -.->|Lê| E
+```
 
-#### 2. `skillsStages`
-Define a taxa de avanço de habilidades físicas (Fist, Club, Sword, Axe, Distance, Shielding).
+### Análise das Tabelas de Configuração
 
-*   **Estrutura:** Idêntica a `experienceStages`.
-*   **Propósito:** Evitar que jogadores de nível alto tenham skills desproporcionais, ou permitir que "catch-up" (recuperação) seja rápido em níveis baixos.
-*   **Lógica Interna:** Multiplica os "ticks" de treino ou hits necessários para avançar a skill.
+Este arquivo não contém funções executáveis, mas sim definições de dados estruturados em tabelas Lua.
 
-#### 3. `magicLevelStages`
-Define a taxa de avanço do Magic Level (ML).
+#### 1. experienceStages
 
-*   **Estrutura:** Idêntica a `experienceStages`.
-*   **Propósito:** Controlar o poder mágico, que escala drasticamente o dano de runas e magias.
-*   **Lógica Interna:** Multiplica a mana gasta para calcular o avanço do ML.
+Define a curva de experiência do servidor.
+
+- **Estrutura**: Lista de objetos contendo `minlevel`, `maxlevel` (opcional) e `multiplier`.
+- **Lógica**: O servidor verifica o nível atual do jogador, encontra a faixa correspondente e aplica o multiplicador sobre a experiência base do monstro.
+- **Comportamento**: Se `maxlevel` não for definido, a faixa é considerada infinita (até o próximo stage ou para sempre).
+
+#### 2. skillsStages
+
+Define os multiplicadores para habilidades de combate físico (Fist, Club, Sword, Axe, Distance, Shielding).
+
+- **Estrutura**: Similar a experienceStages.
+- **Propósito**: Acelerar o treino em níveis baixos de skill e desacelerar em níveis altos para manter a competitividade.
+
+#### 3. magicLevelStages
+
+Define os multiplicadores para o Magic Level (Mana gasta).
+
+- **Estrutura**: Similar a experienceStages.
+- **Propósito**: Balancear a progressão de magos e o impacto do uso de mana/runas.
 
 ### Exemplo de Uso
 
-Para adicionar uma nova etapa onde jogadores acima do nível 3000 ganham apenas 1x de experiência (Hardcore), você modificaria a tabela `experienceStages`:
+Embora seja um arquivo de configuração, você pode acessar essas tabelas em scripts Lua para criar comandos personalizados, como um comando `!rates` para o jogador ver seus rates atuais.
 
 ```lua
-experienceStages = {
-    -- ... estágios anteriores ...
-    { minlevel = 2001, maxlevel = 2999, multiplier = 10 }, -- Estágio anterior fechado
-    { minlevel = 3000, multiplier = 1 }                    -- Novo estágio final (sem maxlevel)
-}
+-- Exemplo: Verificando o multiplicador atual de um jogador
+local playerLevel = player:getLevel()
+local currentRate = 1
+
+for _, stage in pairs(experienceStages) do
+    if playerLevel >= stage.minlevel and (not stage.maxlevel or playerLevel <= stage.maxlevel) then
+        currentRate = stage.multiplier
+        break
+    end
+end
+
+player:sendTextMessage(MESSAGE_STATUS_CONSOLE_BLUE, "Seu rate de experiência atual é: " .. currentRate .. "x")
 ```
 
 ### Observações Técnicas
 
-*   **Carregamento:** Este arquivo é carregado via `dofile` no `server/data/core.lua`.
-*   **Dependência do Core:** As variáveis globais (`experienceStages`, etc.) são lidas diretamente pelo código fonte em C++ (Canary) durante a inicialização ou recarregamento dos scripts.
-*   **Performance:** A leitura é feita em tempo de execução (runtime) ou cacheada pelo C++, dependendo da implementação do motor, mas geralmente tem impacto irrelevante na performance, servindo apenas como tabela de consulta (lookup table).
+- **Dependência do Motor**: O nome das variáveis (`experienceStages`, `skillsStages`, `magicLevelStages`) é hardcoded no código fonte (C++) do servidor. Não renomeie estas tabelas.
+- **Ordenação**: É recomendado manter as tabelas ordenadas do menor nível para o maior para facilitar a leitura e manutenção.
+- **Sobreposição**: Evite faixas de níveis sobrepostas (ex: 1-100 e 50-150), pois isso pode causar comportamento imprevisível na seleção do multiplicador.
 
 ### Alertas
 
-<Warning>
-**Sobreposição de Níveis:** Certifique-se de que não haja lacunas ("gaps") ou sobreposições entre o `maxlevel` de um estágio e o `minlevel` do próximo.
-Exemplo Errado:
-Estágio A: 1-100
-Estágio B: 102-200
-(O nível 101 ficaria sem multiplicador definido, podendo causar bugs ou cair para 1x).
-</Warning>
-
-<Warning>
-**Estágio Infinito:** O último estágio da tabela **não deve** ter um `maxlevel` definido. Isso garante que jogadores que ultrapassem o nível previsto continuem tendo um multiplicador atribuído.
-</Warning>
-
-```lua stages.lua
--- Exemplo visual do arquivo analisado
-experienceStages = {
-    { minlevel = 1, maxlevel = 100, multiplier = 20 },
-    { minlevel = 101, maxlevel = 200, multiplier = 18 },
-    -- ...
-}
-```
+- ⚠️ **Sintaxe Lua**: Certifique-se de que todas as chaves e vírgulas estejam corretas. Um erro de sintaxe aqui impedirá o servidor de iniciar.
+- ⚠️ **Stages Vazios**: Se a tabela for deixada vazia ou comentada, o servidor pode assumir rate 1x padrão ou apresentar erros no console.
+- ⚠️ **Max Level**: Lembre-se que o último estágio geralmente não deve ter `maxlevel` definido, para garantir que jogadores de nível muito alto continuem recebendo experiência (mesmo que reduzida).
