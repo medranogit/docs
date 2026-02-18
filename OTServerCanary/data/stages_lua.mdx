@@ -5,12 +5,25 @@ icon: "file-code"
 ---
 
 <img
-  style={{ borderRadius: '0.5rem' }}
+  style={{ borderRadius:"0.5rem" }}
+  src="/images/Capturadetela2026-02-18162032.png"
+  className="hidden dark:block hidden dark:block"
+/>
+<img
+  style={{ borderRadius:"0.5rem" }}
   src="/images/hero-dark.png"
+  className="hidden dark:block dark:hidden"
+/>
+
+<img
+  style={{ borderRadius:"0.5rem" }}
+  src="/images/Capturadetela2026-02-18162032.png"
+  className="dark:hidden"
 />
 
 ## 🛠️ Informações do Arquivo
-...
+
+Este arquivo define tabelas de configuração de "stages" (faixas de nível) usadas para determinar multiplicadores de experiência, habilidades e magic level no servidor. É um componente de configuração crítico que influencia diretamente a progressão e o balanceamento dos personagens.
 
 <ResponseField name="Caminho Original" type="path">
   `server/data/stages.lua`
@@ -22,13 +35,74 @@ icon: "file-code"
 
 ## 📄 Visão Geral do Código
 
-Abaixo está a representação do arquivo `stages.lua`. Você pode utilizar este espaço para documentar funções específicas ou comportamentos do script.
+### Resumo Executivo
+O `stages.lua` atua como o controlador central da curva de aprendizado do jogo, definindo multiplicadores dinâmicos baseados no nível do personagem. Sua importância reside no balanceamento da economia de tempo do jogador, permitindo uma progressão rápida no início (early game) e mais lenta/estratégica no final (end game).
+
+### Análise de Estruturas de Dados
+
+Como este arquivo é puramente configuracional e não contém funções executáveis, a análise foca nas três tabelas principais que o motor do jogo consome.
+
+#### 1. `experienceStages`
+Define a taxa de ganho de experiência (XP) ao matar monstros.
+
+*   **Estrutura:** Lista de tabelas contendo `{ minlevel, maxlevel, multiplier }`.
+*   **Parâmetros:**
+    *   `minlevel` (Number): O nível inicial para ativar este estágio.
+    *   `maxlevel` (Number | Opcional): O nível final deste estágio. Se omitido, considera-se infinito.
+    *   `multiplier` (Number): O fator pelo qual a experiência base do monstro é multiplicada (ex: 20x).
+*   **Lógica Interna:** O servidor verifica o nível atual do jogador. Se estiver dentro de um intervalo `minlevel` e `maxlevel`, aplica o `multiplier`.
+
+#### 2. `skillsStages`
+Define a taxa de avanço de habilidades físicas (Fist, Club, Sword, Axe, Distance, Shielding).
+
+*   **Estrutura:** Idêntica a `experienceStages`.
+*   **Propósito:** Evitar que jogadores de nível alto tenham skills desproporcionais, ou permitir que "catch-up" (recuperação) seja rápido em níveis baixos.
+*   **Lógica Interna:** Multiplica os "ticks" de treino ou hits necessários para avançar a skill.
+
+#### 3. `magicLevelStages`
+Define a taxa de avanço do Magic Level (ML).
+
+*   **Estrutura:** Idêntica a `experienceStages`.
+*   **Propósito:** Controlar o poder mágico, que escala drasticamente o dano de runas e magias.
+*   **Lógica Interna:** Multiplica a mana gasta para calcular o avanço do ML.
+
+### Exemplo de Uso
+
+Para adicionar uma nova etapa onde jogadores acima do nível 3000 ganham apenas 1x de experiência (Hardcore), você modificaria a tabela `experienceStages`:
+
+```lua
+experienceStages = {
+    -- ... estágios anteriores ...
+    { minlevel = 2001, maxlevel = 2999, multiplier = 10 }, -- Estágio anterior fechado
+    { minlevel = 3000, multiplier = 1 }                    -- Novo estágio final (sem maxlevel)
+}
+```
+
+### Observações Técnicas
+
+*   **Carregamento:** Este arquivo é carregado via `dofile` no `server/data/core.lua`.
+*   **Dependência do Core:** As variáveis globais (`experienceStages`, etc.) são lidas diretamente pelo código fonte em C++ (Canary) durante a inicialização ou recarregamento dos scripts.
+*   **Performance:** A leitura é feita em tempo de execução (runtime) ou cacheada pelo C++, dependendo da implementação do motor, mas geralmente tem impacto irrelevante na performance, servindo apenas como tabela de consulta (lookup table).
+
+### Alertas
+
+<Warning>
+**Sobreposição de Níveis:** Certifique-se de que não haja lacunas ("gaps") ou sobreposições entre o `maxlevel` de um estágio e o `minlevel` do próximo.
+Exemplo Errado:
+Estágio A: 1-100
+Estágio B: 102-200
+(O nível 101 ficaria sem multiplicador definido, podendo causar bugs ou cair para 1x).
+</Warning>
+
+<Warning>
+**Estágio Infinito:** O último estágio da tabela **não deve** ter um `maxlevel` definido. Isso garante que jogadores que ultrapassem o nível previsto continuem tendo um multiplicador atribuído.
+</Warning>
 
 ```lua stages.lua
--- Implementação técnica de: stages.lua
--- Localização: data/stages.lua
-
-function onUse(player, item, fromPosition, target, toPosition, isHotkey)
-    -- O código original seria lido e injetado aqui
-    return true
-end
+-- Exemplo visual do arquivo analisado
+experienceStages = {
+    { minlevel = 1, maxlevel = 100, multiplier = 20 },
+    { minlevel = 101, maxlevel = 200, multiplier = 18 },
+    -- ...
+}
+```
